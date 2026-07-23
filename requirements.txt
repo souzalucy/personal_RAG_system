@@ -1,0 +1,27 @@
+# Core
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+pydantic==2.13.4
+pydantic-settings==2.14.2
+python-dotenv==1.0.1
+
+# Lua runtime
+lupa==2.8
+
+# Vector RAG
+docling==2.114.0
+qdrant-client==1.18.0
+sentence-transformers==3.4.1
+
+# BM25 (vectorless RAG)
+rank-bm25==0.2.2
+
+# LLM
+groq==0.19.0
+
+# Frontend
+streamlit==1.42.0
+httpx==0.28.1
+
+# Utils
+tqdm==4.69.0

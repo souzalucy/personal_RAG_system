@@ -1,0 +1,16 @@
+[Unit]
+Description=Dual RAG System - API (FastAPI + Qdrant Cloud)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/lucy/Pesquisa/RAG
+ExecStart=/home/lucy/Pesquisa/RAG/.venv/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

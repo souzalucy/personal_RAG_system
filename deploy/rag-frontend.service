@@ -1,0 +1,18 @@
+[Unit]
+Description=Dual RAG System - Frontend (Streamlit)
+After=network-online.target rag-api.service
+Wants=network-online.target
+BindsTo=rag-api.service
+
+[Service]
+Type=simple
+WorkingDirectory=/home/lucy/Pesquisa/RAG
+ExecStartPre=/bin/sleep 15
+ExecStart=/home/lucy/Pesquisa/RAG/.venv/bin/python3 /home/lucy/Pesquisa/RAG/scripts/run_frontend.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
