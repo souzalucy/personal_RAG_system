@@ -14,7 +14,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.models import QueryRequest, QueryResponse, Source, IngestResponse, DocumentInfo
+from app.models import QueryRequest, QueryResponse, Source, IngestResponse, FolderIngestResponse, DocumentInfo
 from app import vector_rag, bm25_rag, llm
 from app.lua_runtime import (
     is_enabled,
@@ -141,16 +141,11 @@ def _concatenate_sources(
     return sources
 
 
-@app.post("/api/ingest", response_model=IngestResponse)
-def ingest(file_path: str):
-    """Ingest a PDF file into both RAG systems."""
+def _ingest_single(file_path: str) -> IngestResponse:
+    """Ingest a single PDF into both RAG systems. Returns response even on partial failure."""
     path = Path(file_path)
-    if not path.exists():
-        raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
-    if path.suffix.lower() != ".pdf":
-        raise HTTPException(status_code=400, detail="Only PDF files are supported")
-
     filename = path.name
+    chunk_count = 0
 
     # Vector RAG
     try:
@@ -158,7 +153,6 @@ def ingest(file_path: str):
         vector_status = f"indexed ({chunk_count} chunks)"
     except Exception as e:
         vector_status = f"failed: {e}"
-        chunk_count = 0
 
     # BM25 (vectorless) — reuses the same docling parse to get page texts
     try:
@@ -174,6 +168,60 @@ def ingest(file_path: str):
         vector_rag=vector_status,
         bm25=bm25_status,
         chunks=chunk_count,
+    )
+
+
+@app.post("/api/ingest", response_model=IngestResponse)
+def ingest(file_path: str):
+    """Ingest a single PDF file into both RAG systems."""
+    path = Path(file_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {file_path}")
+    if path.suffix.lower() != ".pdf":
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
+
+    return _ingest_single(file_path)
+
+
+@app.post("/api/ingest-folder", response_model=FolderIngestResponse)
+def ingest_folder(folder_path: str):
+    """Ingest all PDF files from a folder into both RAG systems."""
+    path = Path(folder_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Folder not found: {folder_path}")
+    if not path.is_dir():
+        raise HTTPException(status_code=400, detail=f"Not a directory: {folder_path}")
+
+    pdfs = sorted(path.glob("*.pdf")) + sorted(path.glob("*.PDF"))
+    if not pdfs:
+        raise HTTPException(status_code=404, detail=f"No PDF files found in {folder_path}")
+
+    results: list[IngestResponse] = []
+    succeeded = 0
+    failed = 0
+
+    for pdf_path in pdfs:
+        try:
+            result = _ingest_single(str(pdf_path))
+            results.append(result)
+            succeeded += 1
+        except Exception as e:
+            results.append(IngestResponse(
+                status="failed",
+                document=pdf_path.name,
+                vector_rag=f"error: {e}",
+                bm25=f"error: {e}",
+                chunks=0,
+            ))
+            failed += 1
+
+    return FolderIngestResponse(
+        status="success",
+        folder=folder_path,
+        total_pdfs=len(pdfs),
+        succeeded=succeeded,
+        failed=failed,
+        results=results,
     )
 
 

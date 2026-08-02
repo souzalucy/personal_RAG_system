@@ -42,7 +42,7 @@ return {
 
   -- Document deletion: allow removing PDFs from storage and vector DB
   document_deletion = {
-    enabled = false,
+    enabled = true,
   },
 
   -- Debug logging (prints extra info to stdout)

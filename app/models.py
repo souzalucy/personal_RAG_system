@@ -28,6 +28,15 @@ class IngestResponse(BaseModel):
     chunks: int = 0
 
 
+class FolderIngestResponse(BaseModel):
+    status: str
+    folder: str
+    total_pdfs: int
+    succeeded: int
+    failed: int
+    results: list[IngestResponse]
+
+
 class DocumentInfo(BaseModel):
     filename: str
     vector_rag_indexed: bool

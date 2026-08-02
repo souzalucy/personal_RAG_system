@@ -1,0 +1,14 @@
+# Check status
+sudo systemctl status rag-api.service
+sudo systemctl status rag-frontend.service
+
+# Restart
+sudo systemctl restart rag-api.service
+sudo systemctl restart rag-frontend.service
+
+# Stop
+sudo systemctl stop rag-api.service rag-frontend.service
+
+# View logs
+sudo journalctl -u rag-api.service -n 50 --no-pager
+sudo journalctl -u rag-frontend.service -n 50 --no-pager
